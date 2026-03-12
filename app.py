@@ -1,129 +1,80 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template_string
 
 app = Flask(__name__)
 
-# Temporary database (list)
+# Sample data (temporary list for demo)
 students = [
-    {
-        "id": 1,
-        "name": "Ana Cruz",
-        "grade": 10,
-        "section": "Zechariah"
-    }
+    {"id": 1, "name": "Juan", "grade": 85, "section": "Stallman"},
+    {"id": 2, "name": "Maria", "grade": 90, "section": "Stallman"},
 ]
 
-# Home Route
+# =========================
+# HOME PAGE
+# =========================
 @app.route('/')
 def home():
-    return "Student API is running"
+    return "Welcome to the Student API! Go to /add_student_form to add a student."
 
-# ==============================
-# GET ALL STUDENTS
-# ==============================
-@app.route('/students', methods=['GET'])
-def get_students():
-    return jsonify(students)
+# =========================
+# FORM PAGE
+# =========================
+@app.route('/add_student_form')
+def add_student_form():
 
-# ==============================
-# GET STUDENT BY ID
-# ==============================
-@app.route('/students/<int:id>', methods=['GET'])
-def get_student(id):
+    html = """
+    <h2>Add New Student</h2>
 
-    for student in students:
-        if student['id'] == id:
-            return jsonify(student)
+    <form action="/add_student" method="POST">
+        Name: <input type="text" name="name" autofocus><br><br>
+        Grade: <input type="number" name="grade"><br><br>
+        Section: <input type="text" name="section"><br><br>
+        <input type="submit" value="Add Student">
+    </form>
 
-    return jsonify({"error": "Student not found"}), 404
+    <br>
+    <a href="/students">View Students</a>
+    """
 
-# ==============================
+    return render_template_string(html)
+
+# =========================
 # ADD STUDENT
-# ==============================
-@app.route('/students', methods=['POST'])
+# =========================
+@app.route('/add_student', methods=['POST'])
 def add_student():
 
-    data = request.json
+    name = request.form.get("name")
+    grade = request.form.get("grade")
+    section = request.form.get("section")
 
-    if not data.get('name') or not data.get('grade') or not data.get('section'):
-        return jsonify({"error": "Missing data"}), 400
+    if not name or not grade or not section:
+        return jsonify({"error": "Missing student information"}), 400
+
+    new_id = len(students) + 1
 
     new_student = {
-        "id": students[-1]['id'] + 1 if students else 1,
-        "name": data['name'],
-        "grade": data['grade'],
-        "section": data['section']
+        "id": new_id,
+        "name": name,
+        "grade": int(grade),
+        "section": section
     }
 
     students.append(new_student)
 
     return jsonify({
-        "message": "Student added successfully",
+        "message": "Student added successfully!",
         "student": new_student
     })
 
-# ==============================
-# UPDATE STUDENT
-# ==============================
-@app.route('/students/<int:id>', methods=['PUT'])
-def update_student(id):
+# =========================
+# VIEW ALL STUDENTS
+# =========================
+@app.route('/students', methods=['GET'])
+def get_students():
+    return jsonify(students)
 
-    data = request.json
-
-    for student in students:
-
-        if student['id'] == id:
-
-            student['name'] = data.get('name', student['name'])
-            student['grade'] = data.get('grade', student['grade'])
-            student['section'] = data.get('section', student['section'])
-
-            return jsonify({
-                "message": "Student updated successfully",
-                "student": student
-            })
-
-    return jsonify({"error": "Student not found"}), 404
-
-
-# ==============================
-# DELETE STUDENT
-# ==============================
-@app.route('/students/<int:id>', methods=['DELETE'])
-def delete_student(id):
-
-    for student in students:
-
-        if student['id'] == id:
-            students.remove(student)
-
-            return jsonify({
-                "message": "Student deleted successfully"
-            })
-
-    return jsonify({"error": "Student not found"}), 404
-
-
-# ==============================
-# SEARCH STUDENT
-# ==============================
-@app.route('/students/search', methods=['GET'])
-def search_student():
-
-    name = request.args.get('name')
-
-    result = [s for s in students if name.lower() in s['name'].lower()]
-
-    return jsonify(result)
-
-
-# ==============================
-# API STATUS
-# ==============================
-@app.route('/status')
-def status():
-    return jsonify({"status": "API running"})
-
-
+# =========================
 # RUN SERVER
+# =========================
 if __name__ == '__main__':
     app.run(debug=True)
