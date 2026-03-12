@@ -50,7 +50,7 @@ def add_student():
     if not name or not grade or not section:
         return jsonify({"error": "Missing student information"}), 400
 
-    new_id = len(students) + 1
+    new_id = students[-1]['id'] + 1 if students else 1
 
     new_student = {
         "id": new_id,
@@ -72,6 +72,39 @@ def add_student():
 @app.route('/students', methods=['GET'])
 def get_students():
     return jsonify(students)
+
+# =========================
+# UPDATE STUDENT
+# =========================
+@app.route('/students/<int:id>', methods=['PUT'])
+def update_student(id):
+
+    data = request.json
+
+    for student in students:
+        if student['id'] == id:
+            student['name'] = data.get('name', student['name'])
+            student['grade'] = data.get('grade', student['grade'])
+            student['section'] = data.get('section', student['section'])
+            return jsonify({
+                "message": "Student updated successfully",
+                "student": student
+            })
+
+    return jsonify({"error": "Student not found"}), 404
+
+# =========================
+# DELETE STUDENT
+# =========================
+@app.route('/students/<int:id>', methods=['DELETE'])
+def delete_student(id):
+
+    for student in students:
+        if student['id'] == id:
+            students.remove(student)
+            return jsonify({"message": "Student deleted successfully"})
+
+    return jsonify({"error": "Student not found"}), 404
 
 # =========================
 # RUN SERVER
